@@ -67,3 +67,20 @@ class Driver(models.Model):
 
     def __str__(self):
         return f"{self.DriverName} ({self.bookingId})"
+
+
+class Contact(models.Model):
+    name = models.CharField(max_length=255)
+    email = models.EmailField()
+    phone = models.CharField(max_length=20)
+    textarea = models.TextField()
+
+
+
+class Invoice(models.Model):
+    customer_name = models.CharField(max_length=255)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    pdf_file = models.FileField(upload_to='invoices/pdfs/')
+
+    def __str__(self):
+        return f"Invoice for {self.customer_name}"

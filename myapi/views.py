@@ -192,4 +192,62 @@ class SendmailRegistrations(APIView):
             return Response({'status': False, 'message': 'Failed to send email', 'error': str(e)})
 
 
+from rest_framework import generics
+
+class ContactNameListCreateView(generics.ListCreateAPIView):
+    queryset = Contact.objects.all()
+    serializer_class = ContactSerializer
+
+class ContactNameRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Contact.objects.all()
+    serializer_class = ContactSerializer
+
+# invoices/views.py
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
+from .models import Invoice
+
+@csrf_exempt
+def upload_invoice(request):
+    if request.method == 'POST':
+        customer_name = request.POST.get('customer_name')
+        amount = request.POST.get('amount')
+
+        # Save PDF file
+        pdf_file = request.FILES.get('pdf_file')
+        file_path = default_storage.save(f'invoices/pdfs/{pdf_file.name}', ContentFile(pdf_file.read()))
+
+        # Save invoice details to the database
+        invoice = Invoice.objects.create(
+            customer_name=customer_name,
+            amount=amount,
+            pdf_file=file_path
+        )
+
+        return JsonResponse({'success': True, 'invoice_id': invoice.id})
+
+    return JsonResponse({'success': False, 'message': 'Invalid request method'})
+
+
+
+def get_invoices(request):
+    if request.method == 'GET':
+        invoices = Invoice.objects.all()
+
+        data = []
+        for invoice in invoices:
+            data.append({
+                'id': invoice.id,
+                'customer_name': invoice.customer_name,
+                'amount': str(invoice.amount),
+                'pdf_file': invoice.pdf_file.url,
+            })
+
+        return JsonResponse({'success': True, 'data': data})
+
+    return JsonResponse({'success': False, 'message': 'Invalid request method'})
+
+
 
